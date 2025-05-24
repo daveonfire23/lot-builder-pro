@@ -96,7 +96,7 @@ tk.Label(
     font=("Segoe UI Emoji",16)
 ).pack(pady=10)
 tk.Label(step1, text=
-    "1️⃣ Place up to 500 Lot Sticker images in the ADump folder\n"
+    "1️⃣ Place up to 500 Lot Sticker images in the ADump folder or C:\\Lots\\Original Lot Sticker Photos\n"
     "2️⃣ Click 'Run Step 1' to convert & archive originals\n"
     "3️⃣ Drag thumbnails to reorder\n"
     "4️⃣ Click 'Apply Order & Refresh' to finalize",
@@ -116,55 +116,64 @@ hbar1.pack(side="bottom", fill="x")
 preview_frame1 = tk.Frame(canvas1)
 canvas1.create_window((0,0), window=preview_frame1, anchor="nw")
 
-from PIL import Image
-
 def run_master():
-    """Convert & archive originals, then refresh the Step 1 thumbnail bar with drag/drop restored."""
-    files = sorted(os.listdir(ADUMP))
-    log(f"🔄 Running Step 1 on {len(files)} files…")
+    """Import images from ORIGINAL, copy to ADUMP, archive originals, and refresh the Step 1 thumbnail bar."""
+    # Import files from ORIGINAL, copy to ADUMP, and archive
+    for fname in os.listdir(ORIGINAL):
+        if fname.lower().endswith((".jpg", ".jpeg", ".png")):
+            src = os.path.join(ORIGINAL, fname)
+            dst = os.path.join(ADUMP, fname)
+            shutil.copy(src, dst)
+            archive_dst = os.path.join(ARCHIVE, fname)
+            shutil.move(src, archive_dst)
+            log(f"➡️ Copied {fname} to ADUMP and archived to ARCHIVE")
 
-    # your existing conversion/archive logic goes here…
-    # (e.g. open each file, resize, move originals, etc.)
+    # Process all image files in ADUMP
+    files = [f for f in os.listdir(ADUMP) if f.lower().endswith((".jpg", ".jpeg", ".png"))]
+    log(f"🔄 Running Step 1 on {len(files)} files in ADUMP…")
 
-    # now rebuild the preview bar exactly as on startup
-    for widget in preview1.winfo_children():
+    # Rebuild the preview bar
+    for widget in preview_frame1.winfo_children():
         widget.destroy()
     thumbs1.clear()
 
-    for idx, fname in enumerate(sorted(os.listdir(ADUMP)), start=1):
-        if not fname.lower().endswith((".jpg", ".jpeg", ".png")):
-            continue
+    for idx, fname in enumerate(sorted(files), start=1):
         full = os.path.join(ADUMP, fname)
         img = Image.open(full)
         thumb = img.resize((100, 100), Image.Resampling.LANCZOS)
         tkimg = ImageTk.PhotoImage(thumb)
 
-        lbl = tk.Label(preview1, image=tkimg, text=fname, compound="bottom")
+        lbl = tk.Label(preview_frame1, image=tkimg, text=fname, compound="bottom")
         lbl.image = tkimg
         lbl.grid(row=0, column=idx-1, padx=5, pady=5)
 
-        # restore drag/drop bindings
+        # Restore drag/drop bindings (assuming these functions exist)
         lbl.bind("<Button-1>", lambda e, i=idx-1: start_drag(e, i))
         lbl.bind("<B1-Motion>", on_drag)
         lbl.bind("<ButtonRelease-1>", on_drop)
 
         thumbs1.append(lbl)
 
-    preview1.update_idletasks()
+    preview_frame1.update_idletasks()
     apply_btn1.config(state="normal")
     log(f"🎉 Step 1 Complete! {len(thumbs1)} thumbnails ready.")
 
 def apply_refresh():
     log("🔄 Applying new order (Step 1)...")
-    mapping,tmp = {},{}
-    for i,fn in enumerate(thumbs1, start=1):
-        s = os.path.join(ADUMP,fn); d=os.path.join(ADUMP,f"Lot{i:03}.jpg")
-        if s.lower()!=d.lower(): mapping[s]=d
-    for s,d in mapping.items():
-        t=d+".tmp"; os.rename(s,t); tmp[t]=d
-    for t,d in tmp.items():
-        os.rename(t,d)
-    refresh_preview1()
+    mapping, tmp = {}, {}
+    for i, lbl in enumerate(thumbs1, start=1):
+        fn = lbl.cget("text")
+        s = os.path.join(ADUMP, fn)
+        d = os.path.join(ADUMP, f"Lot{i:03}.jpg")
+        if s.lower() != d.lower():
+            mapping[s] = d
+    for s, d in mapping.items():
+        t = d + ".tmp"
+        os.rename(s, t)
+        tmp[t] = d
+    for t, d in tmp.items():
+        os.rename(t, d)
+    run_master()  # Refresh preview by re-running run_master()
     log("✅ Order applied (Step 1)!")
 
 frames.append(step1)
@@ -172,10 +181,10 @@ frames.append(step1)
 # ─── Step 2 (unchanged) ─────────────────────────────────────────────────────────
 step2 = create_step_frame(2)
 tk.Label(
-     step2,
-     text="📁 Step 2: Final Lot Sticker Images",
-     font=("Segoe UI Emoji",16)
- ).pack(pady=10)
+    step2,
+    text="📁 Step 2: Final Lot Sticker Images",
+    font=("Segoe UI Emoji",16)
+).pack(pady=10)
 tk.Label(step2, text="1️⃣ Your organized Lot Sticker Images will go to:\n"
     f"   {FINAL}\n\n"
     "2️⃣ Now drop your auction photos into C:\Lots\Original Lot Sticker Photos folder.\n"
@@ -188,7 +197,7 @@ def run_step2():
     os.makedirs(FINAL, exist_ok=True)
     lotf = sorted([f for f in os.listdir(ADUMP) if f.lower().startswith("lot") and f.lower().endswith(".jpg")])
     for f in lotf:
-        shutil.move(os.path.join(ADUMP,f), os.path.join(FINAL,f))
+        shutil.move(os.path.join(ADUMP, f), os.path.join(FINAL, f))
         log(f"➡️ Moved {f}")
     log(f"🎉 Step 2 Complete! {len(lotf)} archived.")
     # no messagebox—user sees log
@@ -206,7 +215,6 @@ tk.Label(
     justify="left",
     font=("Segoe UI Emoji",12)
 ).pack(pady=5)
-
 
 # Buttons just like Step 1
 btn_fr3 = tk.Frame(step3)
@@ -239,8 +247,8 @@ def refresh_preview3():
     thumbs3.clear()
     thumbs3.extend(sorted([
         f for f in os.listdir(ADUMP)
-        if os.path.isfile(os.path.join(ADUMP,f))
-           and f.lower().endswith((".jpg",".jpeg",".png"))
+        if os.path.isfile(os.path.join(ADUMP, f))
+           and f.lower().endswith((".jpg", ".jpeg", ".png"))
     ]))
     render_previews3()
     apply_btn3.config(state="normal")
@@ -253,7 +261,7 @@ def render_previews3():
         c = tk.Canvas(preview_frame3, width=100, height=120, bd=0, highlightthickness=0)
         c.pack(side="left", padx=5)
         try:
-            im = Image.open(os.path.join(ADUMP,fn)); im.thumbnail((100,100), Image.Resampling.LANCZOS)
+            im = Image.open(os.path.join(ADUMP, fn)); im.thumbnail((100,100), Image.Resampling.LANCZOS)
             tki = ImageTk.PhotoImage(im); c.create_image(0,0,anchor="nw",image=tki); c.image = tki
         except:
             c.create_text(50,50,text="Err")
@@ -284,18 +292,18 @@ def apply_refresh3():
 
 frames.append(step3)
 
-# ─── Step 5 (placeholder) ─────────────────────────────────────────────────────
-step5 = create_step_frame(5)
-tk.Label(step5, text="🎨 Step 5: Watermark & Resize", font=("Segoe UI Emoji",16)).pack(pady=10)
+# ─── Step 4: Watermark & Resize ─────────────────────────────────────────────────
+step4 = create_step_frame(4)  # Renamed from step5 to step4
+tk.Label(step4, text="🎨 Step 4: Watermark & Resize", font=("Segoe UI Emoji",16)).pack(pady=10)  # Renamed from Step 5 to Step 4
 tk.Label(
-    step5,
+    step4,
     text=(
         f"🔄 Next, Final Lot Sticker Images will move to {TMP} for watermarking & resize."
     ),
     justify="left",
     font=("Segoe UI Emoji",12)
 ).pack(padx=20, pady=5, fill="x")
-frames.append(step5)
+frames.append(step4)  # Appended as step4 instead of step5
 
 # ─── Navigation with auto-step2 and presence check ─────────────────────────────
 nav = tk.Frame(wiz)
