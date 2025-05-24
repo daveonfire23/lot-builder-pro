@@ -213,11 +213,17 @@ frames.append(step2)
 
 # ─── Step 3: REVIEW AUCTION PHOTOS ─────────────────────────────────────────────
 step3 = create_step_frame(3)
+tk.Label(step3, text="🔍 Step 3: Review Auction Photos", font=("Segoe UI Emoji",16)).pack(pady=10)
 tk.Label(
     step3,
-    text="🔍 Step 3: Review Auction Photos",
-    font=("Segoe UI Emoji", 16)
-).pack(pady=10)
+    text=(
+        "1️⃣ Verify if in order OR arrange your Auction photos so they are in order by lot.\n"
+        "2️⃣ Click the Rename & Resize button to get your auction photos organized and ready for the next step."
+    ),
+    justify="left",
+    font=("Segoe UI Emoji",12)
+).pack(pady=5)
+
 
 # Buttons just like Step 1
 btn_fr3 = tk.Frame(step3)
@@ -297,12 +303,15 @@ frames.append(step3)
 
 # ─── Step 5 (placeholder) ─────────────────────────────────────────────────────
 step5 = create_step_frame(5)
-tk.Label(step5,text="🛠️ Step 5: Temporary Processing",font=("Segoe UI Emoji",16)).pack(pady=10)
-tk.Label(step5,
-    f"🔄 Next, Final Lot Sticker Images will move to {TMP} for watermarking & resize.\n"
-    "✅ Originals safe until done.",
-    justify="left", font=("Segoe UI Emoji",12)
-).pack(pady=5)
+tk.Label(step5, text="🎨 Step 5: Watermark & Resize", font=("Segoe UI Emoji",16)).pack(pady=10)
+tk.Label(
+    step5,
+    text=(
+        f"🔄 Next, Final Lot Sticker Images will move to {TMP} for watermarking & resize."
+    ),
+    justify="left",
+    font=("Segoe UI Emoji",12)
+).pack(padx=20, pady=5, fill="x")
 frames.append(step5)
 
 # ─── Navigation ───────────────────────────────────────────────────────────────
