@@ -18,7 +18,8 @@ ARCHIVE = os.path.join(ADUMP, "Original Lot Sticker Images")
 FINAL   = os.path.join(ADUMP, "Final Lot Sticker Images")
 TMP     = os.path.join(ADUMP, "Temp Processing")
 BIN     = os.path.join(BASE, "zBin")
-for p in (ADUMP, ARCHIVE, FINAL, TMP, BIN):
+ORIGINAL = r"C:\Lots\Original Lot Sticker Photos"
+for p in (ADUMP, ARCHIVE, FINAL, TMP, BIN, ORIGINAL):
     os.makedirs(p, exist_ok=True)
 
 # ─── Main window ────────────────────────────────────────────────────────────────
@@ -126,7 +127,7 @@ def run_master():
     # (e.g. open each file, resize, move originals, etc.)
 
     # now rebuild the preview bar exactly as on startup
-    for widget in preview_bar1.winfo_children():
+    for widget in preview1.winfo_children():
         widget.destroy()
     thumbs1.clear()
 
@@ -138,7 +139,7 @@ def run_master():
         thumb = img.resize((100, 100), Image.Resampling.LANCZOS)
         tkimg = ImageTk.PhotoImage(thumb)
 
-        lbl = tk.Label(preview_bar1, image=tkimg, text=fname, compound="bottom")
+        lbl = tk.Label(preview1, image=tkimg, text=fname, compound="bottom")
         lbl.image = tkimg
         lbl.grid(row=0, column=idx-1, padx=5, pady=5)
 
@@ -149,7 +150,7 @@ def run_master():
 
         thumbs1.append(lbl)
 
-    preview_bar1.update_idletasks()
+    preview1.update_idletasks()
     apply_btn1.config(state="normal")
     log(f"🎉 Step 1 Complete! {len(thumbs1)} thumbnails ready.")
 
@@ -177,7 +178,7 @@ tk.Label(
  ).pack(pady=10)
 tk.Label(step2, text="1️⃣ Your organized Lot Sticker Images will go to:\n"
     f"   {FINAL}\n\n"
-    "2️⃣ Now drop your auction photos into ADump folder.\n"
+    "2️⃣ Now drop your auction photos into C:\Lots\Original Lot Sticker Photos folder.\n"
     "3️⃣ Click Next to auto‐run Step 2.",
     justify="left", wraplength=700, font=("Segoe UI Emoji",12)
 ).pack(padx=20,pady=5,fill="x")
@@ -296,21 +297,44 @@ tk.Label(
 ).pack(padx=20, pady=5, fill="x")
 frames.append(step5)
 
-# ─── Navigation ───────────────────────────────────────────────────────────────
-nav = tk.Frame(wiz); nav.pack(side="bottom", fill="x", pady=10)
+# ─── Navigation with auto-step2 and presence check ─────────────────────────────
+nav = tk.Frame(wiz)
+nav.pack(side="bottom", fill="x", pady=10)
+
 def navigate(d):
     global current
-    if current==0 and d==1:
-        run_step2()      # after Step 1→2
-    if current==1 and d==1:
-        refresh_preview3()  # after Step 2→3
-    if 0 <= current+d < len(frames):
+    # If we're advancing from Step 1 to Step 2, run the lot‐sticker move
+    if current == 0 and d == 1:
+        run_step2()
+
+    # If we're advancing from Step 2 to Step 3, enforce the file‐presence check
+    if current == 1 and d == 1:
+        # Point at your Original Lot Sticker Photos folder
+        auction_folder = ARCHIVE
+        # Look for any valid image files in there
+        has_images = any(
+            f.lower().endswith((".jpg", ".jpeg", ".png"))
+            for f in os.listdir(auction_folder)
+        )
+        if not has_images:
+            messagebox.showwarning(
+                "Missing Auction Photos",
+                f"Please add your Auction Photos to {auction_folder}"
+            )
+            return  # block progression
+
+        # If the check passes, run Step 2 (again) and then load Step 3
+        run_step2()
+        load_step3()
+
+    # Now actually switch the visible frame
+    if 0 <= current + d < len(frames):
         frames[current].pack_forget()
         current += d
         frames[current].pack(fill="both", expand=True)
 
-tk.Button(nav, text="⬅️ Back", command=lambda:navigate(-1)).pack(side="left", padx=20)
-tk.Button(nav, text="Next ➡️", command=lambda:navigate(1)).pack(side="right", padx=20)
+tk.Button(nav, text="⬅️ Back", command=lambda: navigate(-1)).pack(side="left", padx=20)
+tk.Button(nav, text="Next ➡️", command=lambda: navigate(1)).pack(side="right", padx=20)
 
 # ─── Initial ─────────────────────────────────────────────────────────────────
 frames[0].pack(fill="both", expand=True)
