@@ -118,28 +118,30 @@ canvas1.create_window((0,0), window=preview_frame1, anchor="nw")
 from PIL import Image
 
 def run_master():
-    log("🔄 Starting Step 1...")
-    exts = (".jpg",".jpeg",".png",".bmp",".tiff",".webp",".heic")
-    files = sorted([f for f in os.listdir(ADUMP)
-                    if f.lower().endswith(exts) and not f.lower().startswith("lot")])
-    # clean old
-    for f in os.listdir(ADUMP):
+    log("🔄 Starting Step 1…")
+    exts = (".jpg", ".jpeg", ".png", ".bmp", ".tiff", ".webp", ".heic")
+    # Now load from ARCHIVE (Original Lot Sticker Photos)
+    files = sorted(f for f in os.listdir(ARCHIVE)
+                   if f.lower().endswith(exts) and not f.lower().startswith("lot"))
+    # Clean out any old Lot### files in ARCHIVE
+    for f in os.listdir(ARCHIVE):
         if f.lower().startswith("lot") and f.lower().endswith(".jpg"):
-            os.remove(os.path.join(ADUMP, f))
-    # convert & force size
+            os.remove(os.path.join(ARCHIVE, f))
+    # Convert & archive originals FROM ARCHIVE into ADUMP
     for i, fname in enumerate(files, start=1):
-        src = os.path.join(ADUMP, fname); new = f"Lot{i:03}.jpg"
+        src = os.path.join(ARCHIVE, fname)
+        new = f"Lot{i:03}.jpg"
         try:
-            orig = Image.open(src).convert("RGB")
-            if orig.width>=orig.height:
-                resized = orig.resize((800,600), Image.Resampling.LANCZOS)
+            img = Image.open(src).convert("RGB")
+            if img.width >= img.height:
+                out = img.resize((800, 600), Image.Resampling.LANCZOS)
             else:
-                resized = orig.resize((600,800), Image.Resampling.LANCZOS)
-            resized.save(os.path.join(ADUMP,new),"JPEG")
-            shutil.move(src, os.path.join(ARCHIVE,fname))
-            log(f"✅ {fname} → {new} (archived)")
+                out = img.resize((600, 800), Image.Resampling.LANCZOS)
+            out.save(os.path.join(ADUMP, new), "JPEG")
+            log(f"✅ {fname} → {new}")
         except Exception as e:
             log(f"⚠️ Skipped {fname}: {e}")
+    # Refresh the preview bar
     refresh_preview1()
     log(f"🎉 Step 1 Complete! {len(thumbs1)} master images ready.")
     apply_btn1.config(state="normal")
