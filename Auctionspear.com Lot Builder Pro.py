@@ -126,7 +126,7 @@ def run_master():
     # (e.g. open each file, resize, move originals, etc.)
 
     # now rebuild the preview bar exactly as on startup
-    for widget in preview_bar1.winfo_children():
+    for widget in preview1.winfo_children():
         widget.destroy()
     thumbs1.clear()
 
@@ -138,7 +138,7 @@ def run_master():
         thumb = img.resize((100, 100), Image.Resampling.LANCZOS)
         tkimg = ImageTk.PhotoImage(thumb)
 
-        lbl = tk.Label(preview_bar1, image=tkimg, text=fname, compound="bottom")
+        lbl = tk.Label(preview1, image=tkimg, text=fname, compound="bottom")
         lbl.image = tkimg
         lbl.grid(row=0, column=idx-1, padx=5, pady=5)
 
@@ -149,7 +149,7 @@ def run_master():
 
         thumbs1.append(lbl)
 
-    preview_bar1.update_idletasks()
+    preview1.update_idletasks()
     apply_btn1.config(state="normal")
     log(f"🎉 Step 1 Complete! {len(thumbs1)} thumbnails ready.")
 
